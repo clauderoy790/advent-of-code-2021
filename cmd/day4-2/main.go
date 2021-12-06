@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
@@ -18,52 +19,55 @@ func main() {
 	fmt.Println("result! ", game.calculateResult())
 }
 
-func newBoardGroup() boardGroup {
-	return boardGroup{}
-}
-
-type boardGroup struct {
-	boards []board
-}
-
-func (b *boardGroup) markNumber(nb int) {
-	for _, board := range b.boards {
-		board.markNumber(nb)
-	}
-}
 func newBingoBoard(size int) board {
 	b := board{
 		size: size,
 	}
 	marked := make([][]bool, size)
+	market2 := make([][]bool, size)
 	for i := 0; i < size; i++ {
 		marked[i] = make([]bool, size)
+		market2[i] = make([]bool, size)
 	}
 	b.marked = marked
+	b.markedTemp = market2
 
 	return b
 }
 
 type board struct {
-	nbs    [][]int
-	marked [][]bool
-	size   int
+	nbs        [][]int
+	marked     [][]bool
+	markedTemp [][]bool
+	size       int
 }
 
-func (b *board) markNumber(nb int)  {
-	for i := 0; i < b.size;i++ {
-		for j:=0;j<b.size;j++ {
+func (b *board) markNumber(nb int) {
+	for i := 0; i < b.size; i++ {
+		for j := 0; j < b.size; j++ {
 			if b.nbs[i][j] == nb {
-				b.marked[i][j] = true
+				b.markedTemp[i][j] = true
 			}
 		}
 	}
 }
 
+func (b *board) saveMarkTemp() {
+	for i := 0; i < b.size; i++ {
+		for j := 0; j < b.size; j++ {
+			b.marked[i][j] = b.markedTemp[i][j]
+		}
+	}
+}
+
+func (b *board) bingo() bool {
+	return b.hasCompleteColumn() || b.hasCompleteRow()
+}
+
 func (b *board) hasCompleteRow() bool {
 	for i := 0; i < b.size; i++ {
 		completed := true
-		for _, m  := range b.marked[i] {
+		for _, m := range b.markedTemp[i] {
 			if !m {
 				completed = false
 				break
@@ -80,7 +84,7 @@ func (b *board) hasCompleteColumn() bool {
 	for i := 0; i < b.size; i++ {
 		completed := true
 		for j := 0; j < b.size; j++ {
-			if !b.marked[j][i] {
+			if !b.markedTemp[j][i] {
 				completed = false
 				break
 			}
@@ -104,36 +108,69 @@ func (b *board) unmarkedSum() int {
 	return sum
 }
 
-type bingoGame struct {
-	nbs          []int
-	boards       []board
-	winner       *board
-	calledNumber int
+func (b *board) String() string{
+	return fmt.Sprintf("NBS: %v \nMarked: %v\nMarkedTemp: %v\n",b.nbs,b.marked, b.markedTemp)
 }
 
-func (g *bingoGame) hasWinner() *board {
-	for _, board := range g.boards {
-		if board.hasCompleteColumn() || board.hasCompleteRow() {
-			return &board
-		}
-	}
-	return nil
+type bingoGame struct {
+	nbs            []int
+	boards         []board
+	winner         *board
+	previousWinner *board
+	calledNumber   int
 }
 
 // returns if game is over
 func (g *bingoGame) playTurn() bool {
+	called := 0
 	if len(g.nbs) > 0 {
-		g.calledNumber = g.nbs[0]
+		called = g.nbs[0]
 		g.nbs = g.nbs[1:]
 	} else {
+		fmt.Println("DONE")
 		return true
 	}
+	fmt.Println("MARK : ", called)
 	for _, b := range g.boards {
-		b.markNumber(g.calledNumber)
+		b.markNumber(called)
 	}
-	if win := g.hasWinner(); win != nil {
-		g.winner = win
-		return true
+	bi := g.checkForBingos(called)
+	if bi {
+		return bi
+	}
+	
+	return len(g.boards) == 0
+}
+
+func (g *bingoGame) checkForBingos(called int) bool {
+	boards := []board{}
+	for _, b := range g.boards {
+		if b.bingo() {
+			b.saveMarkTemp()
+			fmt.Println("BINGO: ",called)
+			fmt.Println(&b)
+			g.previousWinner = &b
+			g.winner = &b
+			g.calledNumber = called
+
+			boards = append(boards, b)
+			if len(g.boards) == 1 {
+				fmt.Println("WINNER IS: ", g.winner)
+				return true
+			}
+		}
+	}
+	for _, b := range boards {
+		in := -1
+		for i, bo := range g.boards {
+			if reflect.DeepEqual(b, bo) {
+				in = i
+				break
+			}
+		}
+		if in >= 0 {
+			g.boards = append(g.boards[:in], g.boards[in+1:]...)
+		}
 	}
 	return false
 }
@@ -142,7 +179,10 @@ func (g *bingoGame) calculateResult() int {
 	if g.winner == nil {
 		return 0
 	}
+	fmt.Println("WINNER: ", g.winner)
 	unmarked := g.winner.unmarkedSum()
+	fmt.Println("KED : ", unmarked)
+	fmt.Println("called: ", g.calledNumber)
 	return unmarked * g.calledNumber
 }
 
@@ -192,6 +232,9 @@ func convertStringToInts(str string, sep string) []int {
 			continue
 		}
 		nbs = append(nbs, nb)
+	}
+	if len(nbs) > 5 && !strings.Contains(str, ",") {
+		panic(nbs)
 	}
 	return nbs
 }
