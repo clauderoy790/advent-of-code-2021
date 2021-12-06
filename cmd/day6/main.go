@@ -3,86 +3,65 @@ package main
 import (
 	"clauderoy790/advent-of-code-2021/helpers"
 	"fmt"
-	"math"
 )
 
-var mi, mj = 0,0
-var arrays [int(math.MaxInt)][int(math.MaxInt)]int
+var NONE = -100
+var days = 256
 
 func main() {
 	strs := helpers.GetInputStrings("day6")
-
+	// i := 0
 	nbs := []int{}
-	for i, str := range strs {
-		nbs := helpers.ConvertStringToInts(str, ",")
-		for _, nb := range nbs {
-			arrays[mi][mj] = nb
-			mj++
-		}
+	for _, str := range strs {
+		n := helpers.ConvertStringToInts(str, ",")
+		nbs = append(nbs, n...)
 	}
-	// fmt.Println("After 0 days:", nbs)
-	days := 256
-	for i := 0; i < days; i++ {
-		arrays = simulate(arrays)
-		fmt.Println("DAY ",i)
-		// fmt.Printf("After %v days: %v\n", i, nbs)
-	}
-	var total uint64 = 0
-
-	for i := range arrays {
-		for j := range arrays[i] {
-			if arrays[i][j] != -100 {
-				total++
-			}
-		}
-	}
-
-	fmt.Println("RESULT IS : ",total)
+	simulateAsync(nbs)
 }
 
-func simulate(slices [][]int) [][]int {
-
-	for i := 0; i < mi;i++ {
-		// continue here
-		for j := 0;j< {
-			if slices[i][j] == -100 {
-				continue
-			}
-			slices[i][j]--
-			if slices[i][j] < 0 {
-				slices[i][j] = 6
-					
-				toAdd = append(toAdd, 8)
-			}
-		}
+func simulateAsync(nbs []int) {
+	ch := make(chan uint64, len(nbs))
+	var sum uint64 = 0
+	fmt.Println("LEN NS: ", len(nbs))
+	for _, nb := range nbs {
+		go simulateOne(nb, ch)
 	}
 
-	ind := len(slices) - 1
-	for _, add := range toAdd {
-		if len(slices[ind]) == math.MaxInt-1 {
-			slices = append(slices, make([]int, 0))
-			ind++
-		}
-		slices[ind] = append(slices[ind], add)
+	for i := 0; i < len(nbs); i++ {
+		nb := <-ch
+		fmt.Println("GET VALUE", i, ": ", nb)
+		sum += nb
 	}
 
-	return slices
+	fmt.Println("sum: ", sum)
 }
 
-func addNumber(nb int) {
-	if mj == int(math.MaxInt-1) {
-		mj = 0
-		mi++
-	}
-	arrays[mi][mj] = nb
-	mi++
-}
+func simulateOne(nb int, c chan uint64) {
+	// fmt.Println("SIMULATE: ",nb, ", days: ",days)
 
-func getNewArray() []int {
-	var arr [int(math.MaxInt)]
+	nbs := [500000000]byte{}
+	nbs[0] = byte(nb)
+	count := 1
 
-	for i := range arr {
-		arr[i] = -100
+	for day := 0; day < days; day++ {
+		// fmt.Println("day: ",day)
+		toAdd := 0
+
+		// Loop through numbers
+		for i := 0; i < count; i++ {
+			nbs[i]--
+			if nbs[i] == 255 {
+				nbs[i] = 6
+				toAdd++
+			}
+		}
+
+		// Add new numbers
+		for i := 0; i < toAdd; i++ {
+			// fmt.Println("ADD NEW NB: ",toAdd)
+			nbs[i+count] = 8
+		}
+		count+=toAdd
 	}
-	return arr
+	c <- uint64(count)
 }
