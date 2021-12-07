@@ -35,3 +35,15 @@ func ConvertStringToInts(str string, sep string) []int {
 	}
 	return nbs
 }
+
+func ConvertStringsToInts(strs []string) []int {
+	nbs := []int{}
+	for _, s := range strs {
+		nb, err := strconv.Atoi(strings.TrimSpace(s))
+		if err != nil {
+			continue
+		}
+		nbs = append(nbs, nb)
+	}
+	return nbs
+}
