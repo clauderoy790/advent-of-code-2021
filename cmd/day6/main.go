@@ -5,12 +5,10 @@ import (
 	"fmt"
 )
 
-var NONE = -100
-var days = 256
+var days = 18
 
 func main() {
 	strs := helpers.GetInputStrings("day6")
-	// i := 0
 	nbs := []int{}
 	for _, str := range strs {
 		n := helpers.ConvertStringToInts(str, ",")
@@ -22,14 +20,12 @@ func main() {
 func simulateAsync(nbs []int) {
 	ch := make(chan uint64, len(nbs))
 	var sum uint64 = 0
-	fmt.Println("LEN NS: ", len(nbs))
 	for _, nb := range nbs {
 		go simulateOne(nb, ch)
 	}
 
 	for i := 0; i < len(nbs); i++ {
 		nb := <-ch
-		fmt.Println("GET VALUE", i, ": ", nb)
 		sum += nb
 	}
 
@@ -37,31 +33,68 @@ func simulateAsync(nbs []int) {
 }
 
 func simulateOne(nb int, c chan uint64) {
-	// fmt.Println("SIMULATE: ",nb, ", days: ",days)
+	fmt.Println("SIMULATE: ", nb, ", days: ", days)
 
-	nbs := [500000000]byte{}
-	nbs[0] = byte(nb)
-	count := 1
-
-	for day := 0; day < days; day++ {
-		// fmt.Println("day: ",day)
-		toAdd := 0
-
-		// Loop through numbers
-		for i := 0; i < count; i++ {
-			nbs[i]--
-			if nbs[i] == 255 {
-				nbs[i] = 6
-				toAdd++
-			}
-		}
-
-		// Add new numbers
-		for i := 0; i < toAdd; i++ {
-			// fmt.Println("ADD NEW NB: ",toAdd)
-			nbs[i+count] = 8
-		}
-		count+=toAdd
-	}
+	count := countAddedFrom(0, nb)
 	c <- uint64(count)
+}
+
+func countAddedFrom(startDay, startValue int) int {
+	init := startValue
+	nbInitDay := 0
+	check := 2
+	dayToCheck := 7
+	if startDay == dayToCheck {
+		fmt.Println("FUCKKKKK")
+	}
+	if startValue == check {
+		fmt.Println("here")
+	}
+	count := 0
+
+	// trim to even value
+	for startValue != 6 {
+		startValue--
+		nbInitDay++
+		if startValue == 0 || startValue == 7 {
+			startValue = 6
+			count++
+			break
+		}
+		startDay++
+
+		// At the end of the days, return 0
+		if startDay >= days {
+			return 0
+		}
+	}
+
+	// calculate day diff
+	d := days - startDay
+
+	// total added days
+	addedCount := d / 7
+	if init == check {
+
+		fmt.Println("d: ", d)
+	}
+	// if d%7 != 0 {
+	// 	addedCount++
+	// }
+
+	// recursively count the number of days that will be added
+	count += addedCount
+	for i := 0; i < addedCount; i++ {
+		newStartDay := init + startDay + (i * 7)
+		count += countAddedFrom(newStartDay, 8)
+		if init == check {
+			fmt.Println("new star tday: ", newStartDay)
+		}
+	}
+
+	if init == check {
+		fmt.Println("added count: ", count)
+	}
+
+	return count
 }
