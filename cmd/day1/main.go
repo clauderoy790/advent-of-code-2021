@@ -56,7 +56,7 @@ func readInput() []int {
 	_, file, _, _ := runtime.Caller(0)
 	b, err := os.ReadFile(strings.Replace(file, "main.go", "input.txt", 1))
 	if err != nil {
-panic()
+		panic(err)
 	}
 	strs := strings.Split(string(b), "\n")
 	nbs := []int{}

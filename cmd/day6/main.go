@@ -3,9 +3,10 @@ package main
 import (
 	"clauderoy790/advent-of-code-2021/helpers"
 	"fmt"
+	"sync"
 )
 
-var days = 256
+var days = 18
 
 func main() {
 	strs := helpers.GetInputStrings("day6")
@@ -14,7 +15,58 @@ func main() {
 		n := helpers.ConvertStringToInts(str, ",")
 		nbs = append(nbs, n...)
 	}
-	simulateAsync(nbs)
+	// simulateAsync(nbs)
+	simulateMap(nbs)
+}
+
+var count uint64
+
+func simulateMap(nbs []int) {
+	wg := new(sync.WaitGroup)
+	count = uint64(len(nbs))
+	for _, nb := range nbs {
+		go simulateM(0, nb, wg)
+		wg.Add(1)
+	}
+
+	wg.Wait()
+	fmt.Println("ans: ", count)
+}
+
+func simulateM(startDay int, startVal int, wg *sync.WaitGroup) {
+	defer wg.Done()
+	day := startDay
+	if day >= days {
+		return
+	}
+	if day == 5 && startVal == 8 {
+		fmt.Println("debug")
+	}
+	for startVal > 0 {
+		if day >= days {
+			return
+		}
+		startVal--
+		day++
+	}
+	
+	var ct uint64 = 0
+	additions := (days - day) / 7
+	for i := 0; i <= additions; i++ {
+		startDay := day + 1 + (i * 7)
+		go simulateM(startDay, 8, wg)
+		wg.Add(1)
+		ct++
+	}
+	fmt.Println("CT: ",ct)
+	inc(ct)
+}
+
+var mu sync.Mutex
+func inc(val uint64) {
+	mu.Lock()
+	defer mu.Unlock()
+	count += val
 }
 
 func simulateAsync(nbs []int) {
@@ -48,11 +100,11 @@ func countAddedFrom(startDay, startValue int) int {
 	startDay += startValue
 
 	// recursively call other numbers
-	additional := (days - startDay -1) / 7
+	additional := (days - startDay - 1) / 7
 	count += additional
-	for i := 0; i <= additional;i++ {
-		start := startDay+(i*7)+1
-		count += countAddedFrom(start,8)
+	for i := 0; i <= additional; i++ {
+		start := startDay + (i * 7) + 1
+		count += countAddedFrom(start, 8)
 	}
 
 	return count
