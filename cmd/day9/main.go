@@ -15,8 +15,6 @@ func main() {
 	width = len(strs[0])
 	height = len(strs)
 	points = make([][]*point, width)
-	// adjacents := []point{{x: -1, y: 0}, {x: 1, y: 0}, {x: 0, y: 1}, {x: 0, y: -1},{x: -1, y: 1},{x: -1, y: -1},{x: 1, y: 1},{x: 1, y: -1}}
-	// todo continue
 	for i := 0; i < width; i++ {
 		points[i] = make([]*point, height)
 		for j := 0; j < height; j++ {
@@ -58,6 +56,7 @@ func part2() {
 			for i, top := range top3 {
 				if basin.size() > top.size() {
 					top3[i] = basin
+					break
 				}
 			}
 		}
