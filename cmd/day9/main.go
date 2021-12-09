@@ -7,44 +7,49 @@ import (
 	"strconv"
 )
 
+var points [][]*point
+var width, height int
+
 func main() {
 	strs := helpers.GetInputStrings("day9")
-	points := make([][]point, len(strs))
-	adjacents := []point{{x: -1, y: 0}, {x: 1, y: 0}, {x: 0, y: 1}, {x: 0, y: -1}}
-	for i, str := range strs {
-		points[i] = make([]point, len(str))
-		for j := 0; j < len(str); j++ {
+	width = len(strs[0])
+	height = len(strs)
+	points = make([][]*point, width)
+	// adjacents := []point{{x: -1, y: 0}, {x: 1, y: 0}, {x: 0, y: 1}, {x: 0, y: -1},{x: -1, y: 1},{x: -1, y: -1},{x: 1, y: 1},{x: 1, y: -1}}
+	// todo continue
+	for i := 0; i < width; i++ {
+		points[i] = make([]*point, height)
+		for j := 0; j < height; j++ {
 			pt := point{x: i, y: j}
-			pt.setHeight(string(strs[i][j]))
-			for _, adj := range adjacents {
-				x, y := i+adj.x, j+adj.y
-				if x >= 0 && x < len(strs) && y >= 0 && y < len(str) {
-					newPt := point{x: x, y: y}
-					newPt.setHeight(string(strs[x][y]))
-					pt.addAdjacent(newPt)
-				}
-			}
-			points[i][j] = pt
+			val := string(strs[pt.y][pt.x])
+			pt.setHeight(string(val))
+			points[pt.x][pt.y] = &pt
 		}
 	}
-	part1(points)
+	part1()
+	part2()
 
 }
 
-func part2(points [][]point) {
+func part2() {
 	basinLocations = make(map[string]bool)
-	basins := []basin{}
+	basins := make([]*basin, 0)
 	for _, pts := range points {
 		for _, pt := range pts {
 			if pt.isLowPoint() {
 				b := basin{}
-				basins = append(basins, b)
+				b.lowPoint = pt
+				basins = append(basins, &b)
 			}
 		}
 	}
+	// calculate basins
+	for _, basin := range basins {
+		basin.calculatePoints()
+	}
 
 	// Count top 3
-	top3 := make([]basin, 3)
+	top3 := make([]*basin, 0)
 	for _, basin := range basins {
 		if len(top3) < 3 {
 			top3 = append(top3, basin)
@@ -66,7 +71,7 @@ func part2(points [][]point) {
 	fmt.Println("P2: ", p2)
 }
 
-type B []basin
+type B []*basin
 
 func (b B) Swap(i, j int) {
 	b[i], b[j] = b[j], b[i]
@@ -81,15 +86,7 @@ func (b B) Less(i, j int) bool {
 
 var basinLocations map[string]bool
 
-func addToBasin(pt point) {
-	if pt.height == 9 {
-		panic("height 9 should not be in basin")
-	}
-	str := strconv.Itoa(pt.x) + strconv.Itoa(pt.y)
-	basinLocations[str] = true
-}
-
-func isInBasin(pt point) bool {
+func isInBasin(pt *point) bool {
 	// 9 are never in basins
 	if pt.height == 9 {
 		return false
@@ -99,17 +96,46 @@ func isInBasin(pt point) bool {
 }
 
 type basin struct {
-	points []point
+	points   []*point
+	lowPoint *point
 }
 
-func (b *basin) calculatePoints(points [][]point) {
+func (b *basin) calculatePoints() {
+	b.calculateRecursive(b.lowPoint)
+}
+
+func (b *basin) calculateRecursive(p *point) {
+	adjacents := []point{{x: -1, y: 0}, {x: 1, y: 0}, {x: 0, y: 1}, {x: 0, y: -1}}
+	for _, ad := range adjacents {
+		x, y := p.x+ad.x, p.y+ad.y
+		if isInBounds(x, y) {
+			newPt := points[x][y]
+			if b.canAddPoint(newPt) {
+				b.add(newPt)
+				b.calculateRecursive(newPt)
+			}
+		}
+	}
+}
+
+func (b *basin) canAddPoint(pt *point) bool {
+	return pt.height != 9 && !isInBasin(pt)
+}
+
+func (b *basin) add(pt *point) {
+	if pt.height == 9 {
+		panic("height 9 should not be in basin")
+	}
+	str := strconv.Itoa(pt.x) + strconv.Itoa(pt.y)
+	basinLocations[str] = true
+	b.points = append(b.points, pt)
 }
 
 func (b *basin) size() int {
 	return len(b.points)
 }
 
-func part1(points [][]point) {
+func part1() {
 	// find low
 	risk := 0
 	for _, pts := range points {
@@ -119,17 +145,24 @@ func part1(points [][]point) {
 			}
 		}
 	}
-	fmt.Println("P!: ", risk)
+	fmt.Println("P1: ", risk)
+}
+
+func isInBounds(x, y int) bool {
+	return x >= 0 && x < width && y >= 0 && y < height
 }
 
 type point struct {
-	x, y      int
-	height    int
-	adjacents []point
+	x, y   int
+	height int
+}
+
+func (p *point) isInBounds() bool {
+	return p.x >= 0 && p.x < width && p.y >= 0 && p.y < height
 }
 
 func (p *point) isLowPoint() bool {
-	for _, pt := range p.adjacents {
+	for _, pt := range p.getAdjacents() {
 		if pt.height <= p.height {
 			return false
 		}
@@ -148,6 +181,19 @@ func (p *point) setHeight(height string) {
 	p.height = nb
 }
 
-func (p *point) addAdjacent(pt point) {
-	p.adjacents = append(p.adjacents, pt)
+func (p *point) String() string {
+	return fmt.Sprintf("x:%v, y:%v\n", p.x, p.y)
+}
+
+var adjacents = []point{{x: -1, y: 0}, {x: 1, y: 0}, {x: 0, y: 1}, {x: 0, y: -1}}
+
+func (p *point) getAdjacents() []*point {
+	var adj []*point
+	for _, ad := range adjacents {
+		pt := point{x: p.x + ad.x, y: p.y + ad.y}
+		if pt.isInBounds() {
+			adj = append(adj, points[pt.x][pt.y])
+		}
+	}
+	return adj
 }
