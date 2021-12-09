@@ -1,0 +1,27 @@
+find 1 (length 2)
+find 7 (length 3)
+find 4 (length 4)
+compare 1 and 7 and find the letter that is in 7 that isn't in 1
+map that missing letter to A
+
+find every letter of length 6
+in those strings, find the one that has 3 of the same character that are in 4 (this is 0)
+
+in the zero string, find the string that IS in 4 that isn't in 1 and map it to D
+
+go back to 4, and find the rune that isn't in one, nor is the new found character that is mapped to D
+Map this rune to B
+
+find a string of length 6 that does contain the ORIGINAL rune that we mapped at D AND that does NOT contain all
+all the characters that are in 1 (this is 6)
+
+find the character that is in one, that ISN'T in 6 and map it to C. Map the other character
+In one, find the character that was just mapped to C and map the other one to F
+
+Find the character that is of length 6 that ISN't 6 NOR 0, (this is 9)
+In 9, find the only character that is in there, that we haven't mapped yet and map it to G
+Map the remaining character to E
+
+//loop through the 4 digits and add them to a string + convert to int and this is the result for that line
+repeat the same process for other lines and add the output to the sum
+this is the final result
