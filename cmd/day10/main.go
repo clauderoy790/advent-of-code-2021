@@ -142,7 +142,7 @@ func findMatchingOpening(str string, i int, closing rune) (rune, error) {
 	if !isClosing(closing) {
 		return ' ', fmt.Errorf("%v is not a closing char\n", closing)
 	}
-	// todo?
+	
 	return ' ', nil
 }
 
