@@ -1,0 +1,80 @@
+multiple lines
+multiple chunks (, [, {, < per line
+some lines are incomplete while some are INVALID
+CORRUPTED line = CHUNK CLOSES with wrong character
+
+478
+012
+
+78654
+01234
+
+// complete incomplete line
+[({([[{{ 
+
+}}]])})]
+
+}}]])})]
+
+// corrupted
+<([]){()}[{}])
+
+{([(<{}[<>}>{[]{[(<()>
+
+part 1:
+example: {([(<{}[<>[]}>{[]{[(<()>
+{([(<[}>{{[(
+	{([(<[}>{{[(
+
+
+	// found first characters that matched closing and removed them
+	{([(<[[]}>{[]{[(<()>
+		// from that index keep going and find matching chars
+{([(<[}>{{[(
+
+	//
+	<{([([[(<>()){}]>(<<{{
+	<{([([>(<<{{
+
+
+
+	{([(<{}[<>[]}>{[]{[(<()>
+
+
+		[<>({}){}[([])<>]]
+		[<>({}){}[([])<>]]
+		[]
+
+
+		// incomplete
+		
+		[({([[{{
+			[({(<(())[]>[[{[]{<()<>>
+			[({([[{{
+
+// INCOMPLETE
+[({([[{{
+[({([[{{
+[({(<(())[]>[[{[]{<()<>>
+{([(<{}[<>[]}>{[]{[(<()>
+	{([(<{}[<>[]}>{[]{[(<()>
+
+// also corrupted [{[{({}]{}}([{[{{{}}([]
+	[{[{({}]{}}([{[{{{}}([]
+
+// again first corrupted {([(<{}[<>[]}>{[]{[(<()>
+	{([(<[]}]}}>{[]{[(<()>
+	<{([([[(<>()){}]>(<<{{
+
+
+// incomplete <{([{{}}[<[[[<>{}]]]>[]]
+	<{([
+// incomplete 2 [({(<(())[]>[[{[]{<()<>>
+	[({(<(())[]>[[{[]{<()<>>
+[({([[{{
+
+// CORRUPTED [[<[([]))<([[{}[[()]]]  Expected ], but found ) instead.
+[[<[([]))<([[{}[[()]]]
+
+
+[[<[)<([[{}[[()]]] 
