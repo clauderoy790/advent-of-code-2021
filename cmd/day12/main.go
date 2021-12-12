@@ -3,16 +3,16 @@ package main
 import (
 	"clauderoy790/advent-of-code-2021/helpers"
 	"fmt"
+	"reflect"
 	"strings"
 )
 
 var paths map[string][]string
-var smallCaves map[string]bool
-var alreadyCrossed []string
+var alreadyExplored [][]string
 
 func main() {
+	alreadyExplored = make([][]string, 0)
 	paths = make(map[string][]string)
-	smallCaves = make(map[string]bool)
 	strs := helpers.GetInputStrings("day12")
 	for _, str := range strs {
 		spl := strings.Split(str, "-")
@@ -21,60 +21,60 @@ func main() {
 	part1()
 }
 
-var fullPaths []string
-
 func part1() {
-	fullPaths = make([]string, 0)
-
-	start := getPossiblePaths("start")
-	for _, s := range start {
-		createPathsFrom([]string{s})
-	}
-
-	fmt.Println("P1: ", len(fullPaths))
+	fmt.Println("paths: ", paths)
+	_, _ = getPathRecursive([]string{"start"})
+	fmt.Println("P1: ", len(alreadyExplored))
 }
 
-func createPathsFrom(initials []string) {
-	paths := getPossiblePaths(initials[len(initials)-1])
-	//create additional paths
-	for _, path := range paths {
-		if path == "end" {
-	_, ok := smallCaves[str]
-	return ok
+// Returns true when can't continue and []string will not be nil if path is possible
+func getPathRecursive(currentPath []string) ([]string, bool) {
+	lastNode := currentPath[len(currentPath)-1]
+
+	// when at end
+	if lastNode == "end" {
+		fmt.Println("FOUDN PATH : ", alreadyExplored)
+		alreadyExplored = append(alreadyExplored, currentPath)
+		return currentPath, true
+	}
+
+	// find all possible paths from this path and call the function on it
+	possiblePaths := paths[lastNode]
+	for _, possible := range possiblePaths {
+		// skip is small cave is already contained in path
+		if isSmallCave(possible) && containsSmallCave(currentPath, possible) {
+			continue
+		}
+		newP := append(currentPath, possible)
+		_, _ = getPathRecursive(newP)
+	}
+
+	return nil, true
 }
 
-func visitedSmallCave(str string) bool {
-	return smallCaves[str]
+func addPath(p1, p2 string) {
+	if _, ok := paths[p1]; !ok {
+		paths[p1] = make([]string, 0)
+	}
+	paths[p1] = append(paths[p1], p2)
 }
 
-func visitSmallCave(str string) {
-	if !isSmallCave(str) {
-		panic("cannot visit this cave as small cave: " + str)
+func alreadyContainsPath(path []string) bool {
+	for _, explored := range alreadyExplored {
+		if reflect.DeepEqual(path, explored) {
+			return true
+		}
 	}
-
-	if smallCaves[str] {
-		panic("already visited this cave for path " + str)
-	}
-
-	smallCaves[str] = true
+	return false
 }
 
-func addSmallCave(str string) {
-	if !isSmallCave(str) {
-		panic("cannot add this cave as big cave: " + str)
+func containsSmallCave(path []string, smallCave string) bool {
+	for _, p := range path {
+		if p == smallCave {
+			return true
+		}
 	}
-
-	if containsSmallCave(str) {
-		panic("cannot add already present: " + str)
-	}
-
-	smallCaves[str] = false
-}
-
-func resetSmallCaves() {
-	for k, _ := range smallCaves {
-		smallCaves[k] = false
-	}
+	return false
 }
 
 func isSmallCave(str string) bool {
