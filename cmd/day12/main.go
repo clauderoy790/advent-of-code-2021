@@ -33,16 +33,17 @@ func getPathRecursive(currentPath []string) ([]string, bool) {
 
 	// when at end
 	if lastNode == "end" {
-		fmt.Println("FOUDN PATH : ", alreadyExplored)
+		fmt.Println("FOUDN PATH : ", currentPath)
 		alreadyExplored = append(alreadyExplored, currentPath)
 		return currentPath, true
 	}
 
 	// find all possible paths from this path and call the function on it
-	possiblePaths := paths[lastNode]
+	possiblePaths := getPossiblePaths(currentPath)
 	for _, possible := range possiblePaths {
 		// skip is small cave is already contained in path
 		if isSmallCave(possible) && containsSmallCave(currentPath, possible) {
+			fmt.Println("SKIP SMALL CAVE: ", possible, " because contained in: ", currentPath)
 			continue
 		}
 		newP := append(currentPath, possible)
@@ -52,11 +53,34 @@ func getPathRecursive(currentPath []string) ([]string, bool) {
 	return nil, true
 }
 
+func getPossiblePaths(current []string) []string {
+	var possible []string
+	lastNode := current[len(current)-1]
+
+	// path going in from current to next path
+	for _, path := range paths[lastNode] {
+		if !isSmallCave(path) {
+			possible = append(possible, path)
+		} else if !containsSmallCave(current, path) {
+			possible = append(possible, path)
+		}
+	}
+
+	return possible
+}
+
 func addPath(p1, p2 string) {
+	// forward path
 	if _, ok := paths[p1]; !ok {
 		paths[p1] = make([]string, 0)
 	}
 	paths[p1] = append(paths[p1], p2)
+
+	// backward path
+	if _, ok := paths[p2]; !ok {
+		paths[p2] = make([]string, 0)
+	}
+	paths[p2] = append(paths[p2], p1)
 }
 
 func alreadyContainsPath(path []string) bool {
