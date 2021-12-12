@@ -1,0 +1,45 @@
+start-A
+start-b
+A-c
+A-b
+b-d
+A-end
+b-end
+
+    start
+    /   \
+c--A-----b--d
+    \   /
+     end
+
+//
+find the points that start can go to // A b
+// from A
+find the points that A can go to // b , c end
+// 
+find the points that b can go to // A, d, end, start (wrong)
+//
+find the points that A can go to // c, end
+//
+find the points that c can go to // A
+//
+find the points that A can go to // end
+Start A b A c A end // found 1 valid path
+
+
+start,A,b,A,end
+
+
+
+answers:
+start,A,b,A,c,A,end
+start,A,b,A,end
+start,A,b,end
+start,A,c,A,b,A,end
+start,A,c,A,b,end
+start,A,c,A,end
+start,A,end
+start,b,A,c,A,end
+start,b,A,end
+start,b,end
+ANSWER: 10

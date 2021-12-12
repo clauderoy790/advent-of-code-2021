@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	for i := 13; i <= 25; i++ {
+	for i := 11; i <= 25; i++ {
 		writeFile(i)
 	}
 }
@@ -30,13 +30,21 @@ func writeFile(day int) {
 		panic("error creating main file")
 	}
 
-	content := []byte(`package main
+	str := `
+package main
+
+import (
+	"clauderoy790/advent-of-code-2021/helpers"
+	"fmt"
+)
 
 func main() {
-	
+	strs := helpers.GetInputStrings("day%v")
+	fmt.Println(strs)
 }
-	`)
-	err = os.WriteFile(m, content, 0644)
+	`
+	str = fmt.Sprintf(str, day)
+	err = os.WriteFile(m, []byte(str), 0644)
 	if err != nil {
 		panic("failed to write file content")
 	}
