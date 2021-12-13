@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"unicode"
 )
 
 var paths map[string][]string
@@ -19,7 +20,6 @@ func main() {
 		addPath(spl[0], spl[1])
 		addPath(spl[1], spl[0])
 	}
-	fmt.Println("PATHS: ", paths)
 	// part1()
 	part2()
 }
@@ -76,7 +76,6 @@ func getPathRecursive2(currentPath []string) ([]string, bool) {
 	// find all possible paths from this path and call the function on it
 	possiblePaths := getPossiblePaths2(currentPath)
 	if len(possiblePaths) == 0 {
-		fmt.Println("EXIT on node: ", lastNode)
 		return nil, false
 	}
 	for _, possible := range possiblePaths {
@@ -119,12 +118,8 @@ func countSmallCaves(currentPath []string) map[string]int {
 // }
 
 func getPossiblePaths2(current []string) []string {
-	fmt.Println("GET POSS PATH: ", current)
 	var possible []string
 	lastNode := current[len(current)-1]
-	if len(current) == 3 && lastNode == "c" {
-		fmt.Println("db")
-	}
 
 	// path going in from current to next path
 	for _, nextStep := range paths[lastNode] {
@@ -133,12 +128,6 @@ func getPossiblePaths2(current []string) []string {
 		} else {
 			smallCaves := countSmallCaves(current)
 
-			// wtf
-			for _, v := range smallCaves {
-				if v > 2 {
-					fmt.Println("WTF")
-				}
-			}
 			wasVisitedTwice := false
 			twiceCave := ""
 			for k, v := range smallCaves {
@@ -148,11 +137,6 @@ func getPossiblePaths2(current []string) []string {
 					break
 				}
 			}
-
-			// if wasVisitedTwice {
-			// 	fmt.Println("TWICE")
-			// }
-
 			// allow certain sc to be visited twice
 			if !wasVisitedTwice || (twiceCave != nextStep && smallCaves[nextStep] == 0) {
 				possible = append(possible, nextStep)
@@ -202,4 +186,90 @@ func containsSmallCave(path []string, smallCave string) bool {
 
 func isSmallCave(str string) bool {
 	return strings.ToUpper(str) != str
+}
+
+// Amit soltion below
+func Day12() {
+	inp := helpers.GetInputStrings("day12")
+	edges := map[string][]string{}
+
+	for _, line := range inp {
+		parts := strings.Split(line, "-")
+
+		if parts[0] != "end" && parts[1] != "start" {
+			edges[parts[0]] = append(edges[parts[0]], parts[1])
+		}
+		if parts[1] != "end" && parts[0] != "start" {
+			edges[parts[1]] = append(edges[parts[1]], parts[0])
+		}
+	}
+	start := "start"
+	end := "end"
+
+	val := CountDFS(edges, [][]string{}, start, end, 1)
+	val2 := CountDFS(edges, [][]string{}, start, end, 2)
+
+	fmt.Println(val)
+	fmt.Println(val2)
+}
+
+func CountDFS(edges map[string][]string, pathStack [][]string, start string, end string, part int) int {
+
+	if start == end {
+		return 1
+	}
+
+	pathStack = append(pathStack, []string{start})
+	partStack := make([]int, len(pathStack))
+	partStack[0] = part
+	count := 0
+	curNode := "start"
+
+	for len(pathStack) > 0 {
+
+		origPart := partStack[len(pathStack)-1]
+		partStack = partStack[:len(pathStack)-1]
+
+		curPath := pathStack[len(pathStack)-1]
+		pathStack = pathStack[:len(pathStack)-1]
+
+		if len(curPath) > 0 {
+			curNode = curPath[len(curPath)-1]
+		}
+
+		if curNode == end {
+			count++
+			continue
+		}
+
+		for _, e := range edges[curNode] {
+			skip := false
+			part = origPart
+			for _, v := range curPath {
+				if e == v {
+					if v == "start" {
+						skip = true
+						break
+					}
+					if unicode.IsLower(rune(v[0])) {
+						if part == 1 {
+							skip = true
+							break
+						}
+						part = 1
+						break
+					}
+				}
+			}
+			if !skip {
+				temp := make([]string, len(curPath))
+				copy(temp, curPath)
+				temp = append(temp, e)
+				pathStack = append(pathStack, temp)
+				partStack = append(partStack, part)
+			}
+		}
+
+	}
+	return count
 }
