@@ -13,7 +13,7 @@ var instructions map[string]string
 func main() {
 	strs := helpers.GetInputStrings("day14")
 	tp := parseInput(strs)
-	part1(10, tp)
+	part1(3, tp)
 	fmt.Println("FINAL PAIRAS: ", pairs)
 }
 
@@ -97,17 +97,21 @@ func getMostLeast(pairs map[string]int) (uint64, uint64) {
 		count[k] = ct
 	}
 
+	rl, rm := ' ', ' '
 	// count least/most
-	for _, v := range count {
+	for k, v := range count {
 		val := uint64(v)
 		if val < least {
 			least = uint64(v)
+			rl = k
 		}
 		if val > most {
 			most = val
+			rm = k
 		}
 	}
 
+	fmt.Printf("The most rune is %v appearing %v times. The least is %v appeating %v times\n", string(rm), most, string(rl), least)
 	return most, least
 }
 
