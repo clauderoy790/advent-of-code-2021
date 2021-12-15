@@ -2,82 +2,133 @@ package main
 
 import (
 	"clauderoy790/advent-of-code-2021/helpers"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 )
 
-var template string
+var pairs map[string]int
 var instructions map[string]string
 
 func main() {
 	strs := helpers.GetInputStrings("day14")
 	tp := parseInput(strs)
 	part1(10, tp)
+	fmt.Println("FINAL PAIRAS: ", pairs)
 }
 
+// Template:     NNCB NN: 1, NC: 1, CB: 1 | N: 2, C:1, B:1
+// After step 1: NCNBCHB
+// After step 2: NBCCNBBBCBHCB BB:2 BC:2 BH: 1 CB:2 CC: 1 CN:1 HC:1 NB:2 | N:2 B:6 C:4 H:1
+// After step 3: NBBBCNCCNBBNBNBBCHBHHBCHB nb bb bc bn nc cn bb nb bn nb bb ch
+// After step 4: NBBNBNBBCCNBCNCCNBBNBBNBBBNBBNBBCBHCBHHNHCBBCBHCB
 var steps = 0
 
 func part1(nbSteps int, template string) {
 	steps = nbSteps
-	newStr := template
+	pairs = stringToPairs(template)
 	for i := 0; i < steps; i++ {
-		toApply := []instruction{}
-		temp := newStr
-		// iterate string
-		pattern := ""
-		longerTo := ""
-		for j := 0; len(temp) >= 2; j++ {
-			from, to, err := getInstruction(temp)
-			if err == nil {
-				pattern += temp[0:2]
-				longerTo += to
-				if _, ok := instructions[pattern]; !ok {
-					fmt.Printf("adding new instruction: %v: %v\n", pattern, longerTo)
-					addInstruction(pattern, longerTo)
-				}
-				toApply = append(toApply, instruction{from: from, to: to, index: j + len(from)/2})
-			} else {
-				pattern = ""
-				longerTo = ""
-			}
-			temp = temp[len(from)/2:]
-		}
-
-		//apply
-		nbInserted := 0
-		for _, ins := range toApply {
-			newStr = insertStringAt(newStr, ins.to, ins.index+nbInserted)
-			nbInserted += len(ins.to)
-		}
+		addPairs()
+		applyRules()
 		// fmt.Printf("After step %v: %v\n", (i + 1), newStr)
 		fmt.Printf("After step %v\n", (i + 1))
 	}
 
-	m := findMostCommonLetter(newStr)
-	if len(m) != 2 {
-		panic("invalid common letters length")
-	}
-	most, least := uint64(1), uint64(1)
-	for _, v := range m {
-		if most == uint64(1) {
-			most = v
-			continue
-		}
-		if least == uint64(1) {
-			least = v
-			continue
-		}
-	}
-
-	if most < least {
-		most, least = least, most
-	}
-	fmt.Println("most: ", m)
+	most, least := getMostLeast(pairs)
 	fmt.Println("most: ", most, ", least: ", least)
-
 	fmt.Println("P1: ", (most - least))
+}
+
+func stringToPairs(str string) map[string]int {
+	newPairs := map[string]int{}
+
+	for i := 0; i < len(str)-1; i++ {
+		newPairs[str[i:i+2]]++
+	}
+	return newPairs
+}
+
+func addPairs() {
+	var p = map[string]int{}
+	// loop through pairs
+	for k, _ := range pairs {
+		// loop through instructions to modify string
+		for from, to := range instructions {
+			if k == from {
+				// pairs[k]++
+				str := insertStringAt(from, to, 1)
+				newPairs := stringToPairs(str)
+				for k, v := range newPairs {
+					p[k] += v
+				}
+				break
+			}
+		}
+	}
+
+	// add new pairs
+	pairs = p
+	fmt.Println("NEW PAIRS: ", pairs)
+}
+
+func applyRules() {
+
+}
+
+func getMostLeast(pairs map[string]int) (uint64, uint64) {
+	most, least := uint64(1), uint64(10000000000000000000)
+	uniqueLetters := findUniqueLetters(pairs)
+
+	count := map[rune]int{}
+	for _, r := range uniqueLetters {
+		for k, v := range pairs {
+			if strings.ContainsRune(k, r) {
+				count[r] += v
+			}
+		}
+	}
+
+	//divide
+	for k, v := range count {
+		ct := v / 2
+		if v%2 != 0 {
+			ct++
+		}
+		count[k] = ct
+	}
+
+	// count least/most
+	for _, v := range count {
+		val := uint64(v)
+		if val < least {
+			least = uint64(v)
+		}
+		if val > most {
+			most = val
+		}
+	}
+
+	return most, least
+}
+
+func findUniqueLetters(pairs map[string]int) []rune {
+	runes := []rune{}
+	for k, _ := range pairs {
+		for _, ru := range k {
+			contains := false
+			for _, r := range runes {
+				if r == ru {
+					contains = true
+					break
+				}
+			}
+			if !contains {
+				runes = append(runes, ru)
+			}
+
+		}
+	}
+	return runes
 }
 
 var maxInstructionLength = 0
@@ -87,26 +138,6 @@ func addInstruction(key, val string) {
 		maxInstructionLength = len(key)
 	}
 	instructions[key] = val
-}
-
-func getInstruction(str string) (string, string, error) {
-	max := len(str)
-	if max%2 != 0 {
-		max--
-	}
-
-	if maxInstructionLength < max {
-		max = maxInstructionLength
-	}
-	for keyLen := max; keyLen >= 2; keyLen -= 2 {
-		key := str[:keyLen]
-		for k, v := range instructions {
-			if key == k {
-				return k, v, nil
-			}
-		}
-	}
-	return "", "", errors.New("failed to find")
 }
 
 func insertStringAt(str string, sub string, pos int) string {
@@ -121,12 +152,15 @@ func insertStringAt(str string, sub string, pos int) string {
 	return string(temp)
 }
 
-func findMostCommonLetter(str string) map[rune]uint64 {
+func findMostCommonLetter(pairs map[string]int) map[rune]uint64 {
 	m := make(map[rune]uint64)
 	most := make(map[rune]uint64)
-	for _, ru := range str {
-		m[ru]++
+	for k, v := range pairs {
+		for _, r := range k {
+			m[r] += uint64(v)
+		}
 	}
+	fmt.Println("appearaces: ", m)
 
 	r := ' '
 	c := uint64(0)
@@ -153,7 +187,7 @@ func findMostCommonLetter(str string) map[rune]uint64 {
 }
 
 func parseInput(strs []string) string {
-	template = strings.TrimSpace(strs[0])
+	str := strings.TrimSpace(strs[0])
 	instructions = make(map[string]string)
 	for _, str := range strs {
 		if len(str) == 0 || !strings.Contains(str, "->") {
@@ -167,10 +201,5 @@ func parseInput(strs []string) string {
 		addInstruction(sp[0], sp[1])
 	}
 	fmt.Println("instructions: ", instructions)
-	return template
-}
-
-type instruction struct {
-	from, to string
-	index    int
+	return str
 }
