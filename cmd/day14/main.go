@@ -9,29 +9,37 @@ import (
 
 var pairs map[string]int
 var instructions map[string]string
+var chars map[rune]int
 
 func main() {
 	strs := helpers.GetInputStrings("day14")
 	tp := parseInput(strs)
 	part1(3, tp)
-	fmt.Println("FINAL PAIRAS: ", pairs)
+	fmt.Println("FINAL PAIRS: ", pairs)
 }
-
+QQQQNBBNQQQQNNQNB
 // Template:     NNCB NN: 1, NC: 1, CB: 1 | N: 2, C:1, B:1
-// After step 1: NCNBCHB
+// After step 1: NCNBCHB | N:2 H:1
 // After step 2: NBCCNBBBCBHCB BB:2 BC:2 BH: 1 CB:2 CC: 1 CN:1 HC:1 NB:2 | N:2 B:6 C:4 H:1
-// After step 3: NBBBCNCCNBBNBNBBCHBHHBCHB nb bb bc bn nc cn bb nb bn nb bb ch
-// After step 4: NBBNBNBBCCNBCNCCNBBNBBNBBBNBBNBBCBHCBHHNHCBBCBHCB
+// After step 3: NBBBCNCCNBBNBNBBCHBHHBCHB nb bb bc bn nc cn bb nb bn nb bb ch | B: 11 H: 4 | BB:
+// After step 4: NBBNBNBBCCNBCNCCNBBNBBNBBBNBBNBBCBHCBHHNHCBBCBHCB | N: B: H:
 var steps = 0
+var length = 0
 
 func part1(nbSteps int, template string) {
+	chars = map[rune]int{}
+	for _, r := range template {
+		chars[r]++
+		length++
+	}
 	steps = nbSteps
 	pairs = stringToPairs(template)
 	for i := 0; i < steps; i++ {
 		addPairs()
 		applyRules()
 		// fmt.Printf("After step %v: %v\n", (i + 1), newStr)
-		fmt.Printf("After step %v\n", (i + 1))
+		fmt.Printf("After step %v, length is %v characters\n", (i + 1), length)
+		fmt.Println("pairs: ", pairs)
 	}
 
 	most, least := getMostLeast(pairs)
@@ -39,23 +47,38 @@ func part1(nbSteps int, template string) {
 	fmt.Println("P1: ", (most - least))
 }
 
+var initial = false
+
 func stringToPairs(str string) map[string]int {
 	newPairs := map[string]int{}
 
 	for i := 0; i < len(str)-1; i++ {
 		newPairs[str[i:i+2]]++
 	}
+	if initial && len(newPairs) != 2 {
+		panic("invalid pair length")
+	}
+	initial = true
 	return newPairs
 }
 
 func addPairs() {
 	var p = map[string]int{}
 	// loop through pairs
-	for k, _ := range pairs {
+	for k, v := range pairs {
 		// loop through instructions to modify string
 		for from, to := range instructions {
 			if k == from {
 				// pairs[k]++
+				if len(to) != 1 {
+					panic("invalid str len")
+				}
+				char := []rune(to)[0]
+				if char == 'H' {
+					fmt.Println("adding H")
+				}
+				chars[char] += v
+				length += v
 				str := insertStringAt(from, to, 1)
 				newPairs := stringToPairs(str)
 				for k, v := range newPairs {
@@ -68,7 +91,6 @@ func addPairs() {
 
 	// add new pairs
 	pairs = p
-	fmt.Println("NEW PAIRS: ", pairs)
 }
 
 func applyRules() {
@@ -77,29 +99,10 @@ func applyRules() {
 
 func getMostLeast(pairs map[string]int) (uint64, uint64) {
 	most, least := uint64(1), uint64(10000000000000000000)
-	uniqueLetters := findUniqueLetters(pairs)
-
-	count := map[rune]int{}
-	for _, r := range uniqueLetters {
-		for k, v := range pairs {
-			if strings.ContainsRune(k, r) {
-				count[r] += v
-			}
-		}
-	}
-
-	//divide
-	for k, v := range count {
-		ct := v / 2
-		if v%2 != 0 {
-			ct++
-		}
-		count[k] = ct
-	}
 
 	rl, rm := ' ', ' '
 	// count least/most
-	for k, v := range count {
+	for k, v := range chars {
 		val := uint64(v)
 		if val < least {
 			least = uint64(v)
