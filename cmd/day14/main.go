@@ -13,7 +13,7 @@ var instructions []instruction
 func main() {
 	strs := helpers.GetInputStrings("day14")
 	tp := parseInput(strs)
-	part1(10, tp)
+	part1(40, tp)
 }
 
 var steps = 0
@@ -23,18 +23,21 @@ func part1(nbSteps int, template string) {
 	newStr := template
 	for i := 0; i < steps; i++ {
 		toApply := []instruction{}
-		for j := 0; j < len(newStr); j++ {
-			
-
+		temp := newStr
+		for j := 0; len(temp) >= 2; j += 2 / 2 {
+			if ins := getInstruction(temp[0:2]); ins != nil {
+				toApply = append(toApply, instruction{from: ins.from, to: ins.to, index: j + 2/2})
+			}
+			temp = temp[2/2:]
 		}
-		toApply = sortApply(toApply, newStr)
+		// toApply = sortApply(toApply, newStr)
 		//apply
 		nbInserted := 0
 		for _, ins := range toApply {
 			newStr = insertStringAt(newStr, ins.to, ins.index+nbInserted)
 			nbInserted += len(ins.to)
 		}
-		fmt.Printf("After step %v: %v\n", (i + 1), newStr)
+		fmt.Printf("After step %v: %v\n", (i + 1), "coucou")
 	}
 
 	m := findMostCommonLetter(newStr)
