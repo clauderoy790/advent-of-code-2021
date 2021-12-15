@@ -10,7 +10,7 @@ import (
 
 func GetInputStrings(dir string) []string {
 	_, file, _, _ := runtime.Caller(0)
-	b, err := os.ReadFile(strings.Replace(file, "/helpers/helpers.go", fmt.Sprintf("/cmd/%s/input.txt",dir), 1))
+	b, err := os.ReadFile(strings.Replace(file, "/helpers/helpers.go", fmt.Sprintf("/cmd/%s/input.txt", dir), 1))
 	if err != nil {
 		panic(err)
 	}
@@ -46,4 +46,58 @@ func ConvertStringsToInts(strs []string) []int {
 		nbs = append(nbs, nb)
 	}
 	return nbs
+}
+
+func ReadInputToGrid(dir string) Grid {
+	pts := [][]*Point{}
+	strs := GetInputStrings(dir)
+	height, width := len(strs), len(strs[0])
+	for i := 0; i < height; i++ {
+		row := []*Point{}
+		for j := 0; j < width; j++ {
+			val, err := strconv.Atoi(string(strs[i][j]))
+			if err != nil {
+				panic("cannot conv to str: " + string(strs[i][j]))
+			}
+			pt := &Point{j, i, val}
+			row = append(row, pt)
+		}
+		pts = append(pts, row)
+	}
+	return Grid{width, height, pts}
+}
+
+type Grid struct {
+	Width, Height int
+	Points        [][]*Point
+}
+
+var adjacentsDiag = []Point{{X: -1, Y: -1}, {X: -1, Y: 1}, {X: -1, Y: 0}, {X: 0, Y: 1}, {X: 0, Y: -1}, {X: 1, Y: 1}, {X: 1, Y: 0}, {X: 1, Y: -1}}
+var adjacents = []Point{{X: -1, Y: 0}, {X: 0, Y: 1}, {X: 0, Y: -1}, {X: 1, Y: 0}}
+
+func (g *Grid) GetAdjacents(x, y int) []*Point {
+	if x >= 0 && x < g.Width && y >= 0 && y < g.Height {
+		panic("GetAdjacents: invalid sarting point")
+	}
+	var adjs []*Point
+	p := g.Points[x][y]
+	for _, adj := range adjacents {
+		pt := Point{X: p.X + adj.X, Y: p.Y + adj.Y}
+		if pt.isInBounds(g) {
+			adjs = append(adjs, g.Points[pt.X][pt.Y])
+		}
+	}
+	return adjs
+}
+
+type Point struct {
+	X, Y, Val int
+}
+
+func (p *Point) String() string {
+	return fmt.Sprintf("X: %v, Y: %v, Val: %v", p.X, p.Y, p.Val)
+}
+
+func (p *Point) isInBounds(g *Grid) bool {
+	return p.X >= 0 && p.X < g.Width && p.Y >= 0 && p.Y < g.Height
 }
