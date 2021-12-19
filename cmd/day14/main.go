@@ -7,144 +7,76 @@ import (
 	"strings"
 )
 
-var pairs map[string]int
+var pairs map[string]uint64
 var instructions map[string]string
-var chars map[rune]int
 
 func main() {
 	strs := helpers.GetInputStrings("day14")
 	tp := parseInput(strs)
-	part1(3, tp)
-	fmt.Println("FINAL PAIRS: ", pairs)
+	part2(40, tp)
+	// real answers
+	// 2188189693529
+	// my answers
+	// 2188189693529
+	// after 40 steps:
+	// 2188189693529
+	// 2911561572630
 }
-QQQQNBBNQQQQNNQNB
+
 // Template:     NNCB NN: 1, NC: 1, CB: 1 | N: 2, C:1, B:1
 // After step 1: NCNBCHB | N:2 H:1
 // After step 2: NBCCNBBBCBHCB BB:2 BC:2 BH: 1 CB:2 CC: 1 CN:1 HC:1 NB:2 | N:2 B:6 C:4 H:1
-// After step 3: NBBBCNCCNBBNBNBBCHBHHBCHB nb bb bc bn nc cn bb nb bn nb bb ch | B: 11 H: 4 | BB:
+// After step 3: NBBBCNCCNBBNBNBBCHBHHBCHB nb bb bc bn nc cn bb nb bn nb bb ch | B: 10 H: 3 | BB:
 // After step 4: NBBNBNBBCCNBCNCCNBBNBBNBBBNBBNBBCBHCBHHNHCBBCBHCB | N: B: H:
-var steps = 0
-var length = 0
 
-func part1(nbSteps int, template string) {
-	chars = map[rune]int{}
-	for _, r := range template {
-		chars[r]++
-		length++
-	}
-	steps = nbSteps
+func part2(steps int, template string) {
 	pairs = stringToPairs(template)
 	for i := 0; i < steps; i++ {
-		addPairs()
-		applyRules()
-		// fmt.Printf("After step %v: %v\n", (i + 1), newStr)
-		fmt.Printf("After step %v, length is %v characters\n", (i + 1), length)
-		fmt.Println("pairs: ", pairs)
+		pairs = processInstructions()
+		fmt.Printf("after %v step\n", (i + 1))
+		printRunes()
 	}
 
-	most, least := getMostLeast(pairs)
-	fmt.Println("most: ", most, ", least: ", least)
-	fmt.Println("P1: ", (most - least))
+	// count runes
+	count := getRuneCount()
+	_, most := countMostRune(count)
+	_, least := countLeastRune(count)
+	fmt.Println("P2: ", (most - least))
 }
 
-var initial = false
+func processInstructions() map[string]uint64 {
+	p := map[string]uint64{}
+	// for k, v := range pairs {
+	// 	p[k] = v
+	// }
 
-func stringToPairs(str string) map[string]int {
-	newPairs := map[string]int{}
+	for k, v := range pairs {
+		if ins, ok := instructions[k]; ok {
+			newStr := insertStringAt(k, ins, 1)
+			newP := stringToPairs(newStr)
+			// multiply pair by values
+			for k2, v2 := range newP {
+				p[k2] += v2 * v
+			}
+		}
+	}
+	return p
+}
 
+func printRunes() {
+	runeCount := getRuneCount()
+	rm, m := countMostRune(runeCount)
+	rl, l := countLeastRune(runeCount)
+	fmt.Printf("The most present letter is %v with %v times and the least present letter is %v with %v times \n", rm, m, rl, l)
+
+}
+
+func stringToPairs(str string) map[string]uint64 {
+	newPairs := map[string]uint64{}
 	for i := 0; i < len(str)-1; i++ {
 		newPairs[str[i:i+2]]++
 	}
-	if initial && len(newPairs) != 2 {
-		panic("invalid pair length")
-	}
-	initial = true
 	return newPairs
-}
-
-func addPairs() {
-	var p = map[string]int{}
-	// loop through pairs
-	for k, v := range pairs {
-		// loop through instructions to modify string
-		for from, to := range instructions {
-			if k == from {
-				// pairs[k]++
-				if len(to) != 1 {
-					panic("invalid str len")
-				}
-				char := []rune(to)[0]
-				if char == 'H' {
-					fmt.Println("adding H")
-				}
-				chars[char] += v
-				length += v
-				str := insertStringAt(from, to, 1)
-				newPairs := stringToPairs(str)
-				for k, v := range newPairs {
-					p[k] += v
-				}
-				break
-			}
-		}
-	}
-
-	// add new pairs
-	pairs = p
-}
-
-func applyRules() {
-
-}
-
-func getMostLeast(pairs map[string]int) (uint64, uint64) {
-	most, least := uint64(1), uint64(10000000000000000000)
-
-	rl, rm := ' ', ' '
-	// count least/most
-	for k, v := range chars {
-		val := uint64(v)
-		if val < least {
-			least = uint64(v)
-			rl = k
-		}
-		if val > most {
-			most = val
-			rm = k
-		}
-	}
-
-	fmt.Printf("The most rune is %v appearing %v times. The least is %v appeating %v times\n", string(rm), most, string(rl), least)
-	return most, least
-}
-
-func findUniqueLetters(pairs map[string]int) []rune {
-	runes := []rune{}
-	for k, _ := range pairs {
-		for _, ru := range k {
-			contains := false
-			for _, r := range runes {
-				if r == ru {
-					contains = true
-					break
-				}
-			}
-			if !contains {
-				runes = append(runes, ru)
-			}
-
-		}
-	}
-	return runes
-}
-
-var maxInstructionLength = 0
-
-func addInstruction(key, val string) {
-	if len(key) > maxInstructionLength {
-		maxInstructionLength = len(key)
-	}
-	instructions[key] = val
 }
 
 func insertStringAt(str string, sub string, pos int) string {
@@ -159,7 +91,52 @@ func insertStringAt(str string, sub string, pos int) string {
 	return string(temp)
 }
 
-func findMostCommonLetter(pairs map[string]int) map[rune]uint64 {
+func getRuneCount() map[string]uint64 {
+	m := map[string]uint64{}
+
+	for k, v := range pairs {
+		for _, r := range k {
+			m[string(r)] += v
+		}
+	}
+
+	//real count
+	for k, v := range m {
+		if v%2 != 0 {
+			m[k]++
+		}
+
+		m[k] /= 2
+	}
+
+	return m
+}
+
+func countMostRune(runes map[string]uint64) (string, uint64) {
+	r := ""
+	m := uint64(0)
+	for k, v := range runes {
+		if v > m {
+			m = v
+			r = k
+		}
+	}
+	return r, m
+}
+
+func countLeastRune(runes map[string]uint64) (string, uint64) {
+	r := ""
+	var l uint64 = 10000000000000000000
+	for k, v := range runes {
+		if v < l {
+			l = v
+			r = k
+		}
+	}
+	return r, l
+}
+
+func findMostCommonLetter(pairs map[string]uint64) map[rune]uint64 {
 	m := make(map[rune]uint64)
 	most := make(map[rune]uint64)
 	for k, v := range pairs {
@@ -167,6 +144,14 @@ func findMostCommonLetter(pairs map[string]int) map[rune]uint64 {
 			m[r] += uint64(v)
 		}
 	}
+	// divide
+	for k, v := range m {
+		if v%2 == 1 {
+			m[k]++
+		}
+		m[k] /= 2
+	}
+
 	fmt.Println("appearaces: ", m)
 
 	r := ' '
@@ -205,8 +190,7 @@ func parseInput(strs []string) string {
 		for i := range sp {
 			sp[i] = strings.TrimSpace(sp[i])
 		}
-		addInstruction(sp[0], sp[1])
+		instructions[sp[0]] = sp[1]
 	}
-	fmt.Println("instructions: ", instructions)
 	return str
 }
