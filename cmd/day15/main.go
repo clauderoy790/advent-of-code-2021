@@ -12,15 +12,16 @@ func main() {
 }
 
 var calculatedFrom []*helpers.Point
+var lowestRisk = 1000000000000000000
 
 func part1(g helpers.Grid) {
 	paths := [][]*helpers.Point{}
 	// loop grid
-	p := calculatePathFrom(nil, g.GetAdjacents(0, 0))
+	p := calculatePathFrom([]*helpers.Point{g.Points[0][0]}, g.GetAdjacents(0, 0))
 	paths = append(paths, p)
 
 	// find lowest
-	lowestRisk := 100000000
+	lowestRisk := 1000000000000000000
 	for _, path := range paths {
 		risk := 0
 		for _, point := range path {
@@ -32,13 +33,22 @@ func part1(g helpers.Grid) {
 	}
 }
 
-func calculatePathFrom(previous, points []*helpers.Point) [][]*helpers.Point {
-	paths := [][]*helpers.Point{}
-	// add previous points
-	for i, path := range paths {
-		paths[i] = append(previous, path[i])
+func calculateRisk(points []*helpers.Point) int {
+	risk := 0
+	for _, p := range points {
+		risk += p.Val
 	}
-	return paths
+	return risk
+}
+
+func calculatePathFrom(previousRisk int, from *helpers.Point) []*helpers.Point {
+	p := []*helpers.Point{}
+	p = append(p, previous...)
+
+	for i, path := range p {
+		p[i] = append(previous, path[i])
+	}
+	return p
 }
 
 func hasAlreadyCalculatedFrom(p *helpers.Point) bool {
@@ -49,3 +59,6 @@ func hasAlreadyCalculatedFrom(p *helpers.Point) bool {
 	}
 	return false
 }
+
+// find coming from point
+// pass current risk level
