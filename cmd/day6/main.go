@@ -8,57 +8,50 @@ import (
 var days = 256
 
 func main() {
+	// get the input and transform to a int array
 	strs := helpers.GetInputStrings("day6")
 	nbs := []int{}
 	for _, str := range strs {
 		n := helpers.ConvertStringToInts(str, ",")
 		nbs = append(nbs, n...)
 	}
-	simulateWorking(nbs)
+
+	simulate(nbs)
 }
 
-func simulateWorking(nbs []int) {
-	m := make(map[int]int)
-	// init
-	for i := 0; i <= 8; i++ {
-		m[i] = 0
-	}
-	for _, nb := range nbs {
+func simulate(initialFishes []int) {
+	m := initMap() // initialize a map with keys 0 to 8
+
+	// initialize the map with the input fishes
+	for _, nb := range initialFishes {
 		m[nb]++
 	}
 
+	// run the simulation for X days
 	for day := 0; day < days; day++ {
-		newM := initMap()
+		newM := initMap() // initialize a map with keys 0 to 8
 		for k, v := range m {
-			if k == 0 {
+			if k == 0 { // if we get to day 0, the current fish resets at 6 days and creates a new fish at 8 days
 				newM[8] += v
 				newM[6] += v
-			} else {
+			} else { // decrease our day value by one
 				newM[k-1] += v
 			}
 		}
-		m = copyMap(newM)
+		m = newM // override previous day map
 	}
 
-	var count uint64 = 0
-	for _, v := range m {
-		count += uint64(v)
+	var totalFishCount uint64 = 0
+	for _, nbFish := range m {
+		totalFishCount += uint64(nbFish)
 	}
-	fmt.Println("RESP IS: ", count)
+	fmt.Println("the number of fish is: ", totalFishCount)
 }
 
 func initMap() map[int]int {
 	newM := make(map[int]int)
 	for i := 0; i <= 8; i++ {
 		newM[i] = 0
-	}
-	return newM
-}
-
-func copyMap(m map[int]int) map[int]int {
-	newM := make(map[int]int)
-	for k, v := range m {
-		newM[k] = v
 	}
 	return newM
 }
