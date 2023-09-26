@@ -30,12 +30,12 @@ func simulate(initialFishes []int) {
 	// run the simulation for X days
 	for day := 0; day < days; day++ {
 		newM := initMap() // initialize a map with keys 0 to 8
-		for k, v := range m {
-			if k == 0 { // if we get to day 0, the current fish resets at 6 days and creates a new fish at 8 days
-				newM[8] += v
-				newM[6] += v
-			} else { // decrease our day value by one
-				newM[k-1] += v
+		for day, fishCount := range m {
+			if day == 0 { // if we get to day 0, the current fish resets at 6 days and creates a new fish at 8 days
+				newM[8] += fishCount
+				newM[6] += fishCount
+			} else { // decrease our day value by one with the same fish count
+				newM[day-1] += fishCount
 			}
 		}
 		m = newM // override previous day map
